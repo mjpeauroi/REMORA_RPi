@@ -4,9 +4,13 @@
 import cv2
 import os
 import shutil
+import base64
 
-buffer_size = 2040
+buffer_size = 512
 
+def encode_to_base64(binary_data):
+    base64_encoded_data = base64.b64encode(binary_data)
+    return base64_encoded_data.decode('ascii')
 
 # Adjust working directory
 working_directory = os.path.expanduser('~/Documents/REMORA_RPi/image_splitting')
@@ -34,26 +38,29 @@ if result:
     with open("capture.jpg", 'rb') as image_file:
         capture_bin = image_file.read()
     
+    # Convert using base64
+    base64_data = (base64.b64encode(capture_bin)).decode("ascii")
+
+    ## CHANGES START HERE
     # Split into buffers
     file_length = len(capture_bin)
    
     # Create new split_capture directory
-    os.makedirs("split_capture/", exist_ok=True)
-    print("Created split_capture/")
+    os.makedirs("base64_split/", exist_ok=True)
+    print("Created base64_split/")
 
     buffer_number = 0
     while (buffer_number * buffer_size < file_length):
-        # Calculate the starting position for this buffer
         start_pos = buffer_number * buffer_size
-        # Determine the chunk of binary data
-        current_buffer = capture_bin[start_pos:start_pos + buffer_size]
+        current_buffer = base64_data[start_pos:start_pos + buffer_size]
         
-        # Write the buffer to its own file
-        path = f"split_capture/split_capture_{buffer_number}.bin"
-        with open(path, 'wb') as buffer_file:
+        # Write the buffer to its own text file
+        path = f"base64_split/split_{buffer_number}.txt"
+        with open(path, 'w') as buffer_file:
             buffer_file.write(current_buffer)
         
         buffer_number += 1
+
 else:
     print("No image detected")
 

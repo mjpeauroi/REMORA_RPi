@@ -1,8 +1,8 @@
 # Ignoring all images and binary files when saving to github
 
-*.jpg
-*.mov
-*.png
-*.bin
+# *.jpg
+# *.mov
+# *.png
+# *.bin
 
-image_splitting/split_capture/
+# image_splitting/split_capture/
