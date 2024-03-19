@@ -7,7 +7,7 @@ import shutil
 import base64
 
 buffer_size = 1024
-compression_quality = 10
+compression_quality = 50
 
 def encode_to_base64(binary_data):
     base64_encoded_data = base64.b64encode(binary_data)
@@ -47,7 +47,8 @@ if result:
 
     # Compress and save the image
     image_path = os.path.expanduser(f'~/Documents/REMORA_RPi/image_splitting/capture_archive/capture_{this_capture_index}.jpg')
-    cv2.imwrite(image_path, top_left_quarter, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
+    # cv2.imwrite(image_path, top_left_quarter, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
+    cv2.imwrite(image_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
 
     print(f"Created capture_{this_capture_index}.jpg")
     with open(image_path, 'rb') as image_file:

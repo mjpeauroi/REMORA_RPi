@@ -28,7 +28,8 @@ try:
     # Open the serial port
     if not ser.is_open:
         ser.open()
-    buffer_to_send = f"<<START IMG {this_capture_index}>>\n"
+   # buffer_to_send = f"<<START IMG {this_capture_index}>>\n"
+    buffer_to_send = "<<START IMG 20>>\n"
     ser.write(buffer_to_send.encode('ascii'))
     print(f'Sent {buffer_to_send}')
     for i in range(num_buffers):
@@ -39,7 +40,8 @@ try:
         ser.write(buffer_to_send.encode('ascii'))
         print(f'Sent buffer {i} of {num_buffers}')
         time.sleep(0.1)
-    buffer_to_send = f"<<END IMG {this_capture_index}>>\n"
+    buffer_to_send = "<<END IMG 20\n>>"
+   # buffer_to_send = f"<<END IMG {this_capture_index}>>\n"
     ser.write(buffer_to_send.encode('ascii'))
     print(f'Sent {buffer_to_send}')
 
