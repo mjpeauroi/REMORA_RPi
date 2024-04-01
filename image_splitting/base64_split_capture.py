@@ -59,7 +59,7 @@ if result:
 
     ## CHANGES START HERE
     # Split into buffers
-    file_length = len(capture_bin)
+    file_length = len(base64_data)
    
     # Create new split_capture directory
     os.makedirs("base64_splits/", exist_ok=True)

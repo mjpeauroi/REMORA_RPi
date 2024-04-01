@@ -6,9 +6,9 @@ import subprocess
 import time
 
 #### Uncomment to get camera information
-get_camera_info_long = "lsusb -s 001:004 -v"
-get_camera_info = "v4l2-ctl --device=/dev/video0 --list-ctrls"
-subprocess.run(get_camera_info, shell=True)
+# get_camera_info_long = "lsusb -s 001:004 -v"
+# get_camera_info = "v4l2-ctl --device=/dev/video0 --list-ctrls"
+# subprocess.run(get_camera_info, shell=True)
 
 ### Uncomment to take photos
 # change_setting1 = "v4l2-ctl --device=/dev/video0 --set-ctrl=saturation=0"
@@ -35,9 +35,9 @@ take_video = [
     "-s", "1920x1080",             # Video size
     "-c:v", "h264",                # Video codec
     "-pix_fmt", "yuv420p",         # Pixel format
-    "video.mp4"                    # Output file
+    "test_vid.mp4"                    # Output file
 ]
-# subprocess.run(take_video)
+subprocess.run(take_video)
 
 # take_5s_video = "ffmpeg -y -t 5 -f video4linux2 -i /dev/video0 -s 1920x1080 -c:v h264 -pix_fmt yuv420p video.mp4"
 # subprocess.run(take_5s_video, shell=True)
