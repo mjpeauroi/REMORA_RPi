@@ -16,7 +16,7 @@ def detect_motion(frame, avg_frame):
 
 def main():
     cam = Video_Recorder()
-    _, avg_frame = cam.get_frame()  # Get the first frame as the average frame
+    ret, avg_frame = cam.get_frame()  # Get the first frame as the average frame
     avg_frame = cv2.cvtColor(avg_frame, cv2.COLOR_BGR2GRAY)
     avg_frame = cv2.GaussianBlur(avg_frame, (21, 21), 0)
 

@@ -3,100 +3,87 @@ import os
 import numpy as np
 import time
 
-setthreshold = 13   # Abs difference threshold
-setblursize = 21    # Width of gaussian blur
-setavgframes = 5    # Number of frames averaged each check
+setthreshold = 90  # Abs difference threshold
+setblursize = 41  # Width of gaussian blur
+setavgframes = 7  # Number of frames averaged each check
 triggerdelay = 1.5  # Delay in seconds to confirm motion
-vidlength = 6       # Length of the video
+vidlength = 6  # Length of the video in seconds
 
-# Set environment variable for the current process and any subprocesses it spawns
+# Specify no viewing platform
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
-# Use the first camera as video source
-cap = cv2.VideoCapture(0)
-frame_width = int(cap.get(3))
-frame_height = int(cap.get(4))
+working_directory = os.path.expanduser('~/Documents/REMORA_RPi/detect+save')
+os.chdir(working_directory)
 
-# Initialize a list to hold the last 'setavgframes' frames
-frames = []
+def main():
+    cam = cv2.VideoCapture(0)
+    frame_width = int(cam.get(3))
+    frame_height = int(cam.get(4))
 
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*"avc1")
-out = cv2.VideoWriter('video.mp4', fourcc, 30.0, (frame_width, frame_height))
+    os.makedirs("videos", exist_ok=True)
+    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/detect+save/videos/')
+    files = os.listdir(directory_path)
+    index = len(files) + 1
 
-try:
-    # Read initial frames and fill the buffer
+    fourcc = cv2.VideoWriter_fourcc(*"avc1")
+    out = cv2.VideoWriter(f'{directory_path}video_{index}.mp4', fourcc, 15.0, (frame_width, frame_height))
+
+    frames = []
+
+    # initially fill the buffer
     for _ in range(setavgframes):
-        done, frame = cap.read()
+        done, frame = cam.read()
         if not done:
             break
-        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))  # Store gray frames
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blurredgray = cv2.GaussianBlur(gray, (setblursize, setblursize), 0)
+        frames.append(blurredgray)
 
+    avg_frame = np.mean(frames, axis=0)
     recording = False
-    record_start_time = None
+    start_time = None
 
-    while done:
-        # Calculate average of the frames in the buffer
-        avg_frame = np.mean(frames, axis=0).astype(np.uint8)
+    try:
+        while True:
+            done, next_frame = cam.read()
+            if not done:
+                break
 
-        # Read the next frame
-        done, NextFrame = cap.read()
-        if not done:
-            break
-        NextGray = cv2.cvtColor(NextFrame, cv2.COLOR_BGR2GRAY)
-
-        # Update the frames buffer
-        frames.pop(0)  # Remove the oldest frame
-        frames.append(NextGray)  # Add the new frame
-
-        # Calculate the absolute difference between the average frame and the next frame
-        diff = cv2.absdiff(avg_frame, NextGray)
-
-        # Apply GaussianBlur
-        blured_img = cv2.GaussianBlur(diff, (setblursize, setblursize), 0)
-
-        # Apply threshold
-        threshold, binary_img = cv2.threshold(blured_img, setthreshold, 255, cv2.THRESH_BINARY)
-
-        # Dilate the image
-        dilated = cv2.dilate(binary_img, None, iterations=12)
-
-        # Find contours
-        contours, hierarchy = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-
-        motion_detected = False  # Flag to check if motion is detected
-        for contour in contours:
-            if cv2.contourArea(contour) < 1000:
-                continue
-            motion_detected = True
-            break
-
-        # Check motion detection state and handle recording logic
-        if motion_detected:
-            if not recording:
-                # Start recording
-                recording = True
-                record_start_time = time.time()
-            elif recording and (time.time() - record_start_time > triggerdelay):
-                # Confirm continued motion detection
-                if not motion_detected:
-                    # Stop and discard the recording
-                    out.release()
-                    os.remove('video.mp4')
-                    recording = False
-                    print("Video discarded due to lack of continued motion.")
-                elif time.time() - record_start_time >= vidlength:
-                    # Stop recording after the specified video length
-                    recording = False
-                    print("Video saved.")
-                    break
             if recording:
-                out.write(NextFrame)
+                out.write(next_frame)
+                elapsed_time = time.time() - start_time
+                if elapsed_time >= vidlength:
+                    recording = False
+                    out.release()
+                    print(f"Video {index} saved.")
+                    index += 1
+                    out = cv2.VideoWriter(f'{directory_path}video_{index}.mp4', fourcc, 15.0, (frame_width, frame_height))
+                    continue  # Move to the next iteration to avoid additional logic in this loop
 
-except KeyboardInterrupt:
-    print("Interrupted by user")
+            gray_next = cv2.cvtColor(next_frame, cv2.COLOR_BGR2GRAY)
+            blurredgray_next = cv2.GaussianBlur(gray_next, (setblursize, setblursize), 0)
+            frame_delta = cv2.absdiff(avg_frame.astype(np.uint8), blurredgray_next)
+            thresh = cv2.threshold(frame_delta, setthreshold, 255, cv2.THRESH_BINARY)[1]
+            thresh = cv2.dilate(thresh, None, iterations=2)
+            contours, _ = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-finally:
-    cap.release()
-    if recording:
-        out.release()
+            if any(cv2.contourArea(contour) > 1000 for contour in contours):
+                if not recording:
+                    start_time = time.time()
+                    recording = True
+                    print(f"Recording for {index} started")
+            else:
+                if recording:
+                    # Consider moving the stopping logic here if needed
+                    pass
+
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+
+    finally:
+        cam.release()
+        if recording:
+            out.release()
+
+if __name__ == "__main__":
+    main()
