@@ -1,19 +1,28 @@
 import cv2
 import os
 import numpy as np
+import time
 
 setthreshold = 13
 setblursize = 21
-setavgframes = 20
+setavgframes = 5
+triggerdelay = 1.5  # Delay in seconds to confirm motion
+vidlength = 6       # Length of the video to record in seconds
 
 # Set environment variable for the current process and any subprocesses it spawns
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 # Use the first camera as video source
 cap = cv2.VideoCapture(0)
+frame_width = int(cap.get(3))
+frame_height = int(cap.get(4))
 
 # Initialize a list to hold the last 'setavgframes' frames
 frames = []
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*"avc1")
+out = cv2.VideoWriter('video.mp4', fourcc, 30.0, (frame_width, frame_height))
 
 try:
     # Read initial frames and fill the buffer
@@ -22,6 +31,9 @@ try:
         if not done:
             break
         frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))  # Store gray frames
+
+    recording = False
+    record_start_time = None
 
     while done:
         # Calculate average of the frames in the buffer
@@ -53,20 +65,38 @@ try:
         contours, hierarchy = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
         motion_detected = False  # Flag to check if motion is detected
-
         for contour in contours:
             if cv2.contourArea(contour) < 1000:
                 continue
-
             motion_detected = True
-            print("Motion detected")
+            break
 
-        if not motion_detected:
-            # If no motion is detected
-            print("No motion detected")
+        # Check motion detection state and handle recording logic
+        if motion_detected:
+            if not recording:
+                # Start recording
+                recording = True
+                record_start_time = time.time()
+            elif recording and (time.time() - record_start_time > triggerdelay):
+                # Confirm continued motion detection
+                if not motion_detected:
+                    # Stop and discard the recording
+                    out.release()
+                    os.remove('video.mp4')
+                    recording = False
+                    print("Video discarded due to lack of continued motion.")
+                elif time.time() - record_start_time >= vidlength:
+                    # Stop recording after the specified video length
+                    recording = False
+                    print("Video saved.")
+                    break
+            if recording:
+                out.write(NextFrame)
 
 except KeyboardInterrupt:
     print("Interrupted by user")
 
 finally:
     cap.release()
+    if recording:
+        out.release()
