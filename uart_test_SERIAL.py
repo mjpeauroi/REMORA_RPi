@@ -13,14 +13,18 @@ try:
     if not ser.is_open:
         ser.open()
 
-    data = 0
-    while True:
-        time.sleep(0.1)
-        ser.write((0).to_bytes(1, 'big'))
+    data = "pspspspps\n"
+    ser.write(data.encode())
+    print(data)
+    print(len(data))
 
-        #ser.write((data % 256).to_bytes(1, 'big'))
-        print(f"Sent: {data % 256}")
-        data += 1
+    # while True:
+    #     time.sleep(0.1)
+    #     ser.write((0).to_bytes(1, 'big'))
+
+    #     #ser.write((data % 256).to_bytes(1, 'big'))
+    #     print(f"Sent: {data % 256}")
+    #     data += 1
 
 finally:
     ser.close()
