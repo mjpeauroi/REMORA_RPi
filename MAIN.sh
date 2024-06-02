@@ -2,11 +2,14 @@
 
 set -e
 
+# Activate the virtual environment for python scripts
+source /home/pi/venvs/opencv-env/bin/activate
+
 # Wakeup interval
 # ie. '3600' sets wakeup at the top of every hour
 #     '600' sets wakeup at ~:00, ~:10, ~:20 etc
 #     '300' sets wakeup at ~:00, ~:05, ~:10, ~:15 etc
-WAKEUP_INTERVAL=300
+WAKEUP_INTERVAL=240
 
 # Log file for debug information
 LOG_FILE=/home/pi/powercontrol.log
@@ -42,55 +45,11 @@ if [[ $response =~ "rtc_time: " ]]; then
     alarm_time=$(echo "get rtc_alarm_time" | nc -q 0 127.0.0.1 8423)
     echo "Set wakeup time is $alarm_time - (note ymd is ignored)" | tee -a $LOG_FILE # ymd is ignored and alarm is set for the current day
 
+    # sudo /home/pi/venvs/opencv-env/bin/python3 main.py
+    # sudo shutdown now
+
 else
     echo "Failed to retrieve valid rtc_time from response: $response" | tee -a $LOG_FILE
     exit 1
 fi
 
-
-
-
-
-#     # Set the system time using the date command directly from ISO8601 format
-#     if sudo date -u -s "$rtc_time"; then
-#         echo "System time set to: $(date)" | tee -a $LOG_FILE
-#     else
-#         echo "Failed to set system time" | tee -a $LOG_FILE
-#         exit 1
-#     fi
-
-#     # Calculate the next wakeup time (3 minutes from current RTC time)
-#     wakeup_time=$(date -d "$rtc_time + 3 minutes" +%Y-%m-%dT%H:%M:%S%:z)
-#     echo "Calculated wakeup time is $wakeup_time" | tee -a $LOG_FILE
-
-#     # Set the RTC alarm
-#     command="rtc_alarm_set ${wakeup_time} 127"
-#     echo "Sending command: $command" | tee -a $LOG_FILE
-#     r=$(echo "$command" | nc -q 0 127.0.0.1 8423)
-#     echo "RTC Alarm Set Response: $r" | tee -a $LOG_FILE
-
-#     # Check if the alarm was set correctly
-#     alarm_time=$(echo "get rtc_alarm_time" | nc -q 0 127.0.0.1 8423)
-#     echo "Set wakeup time is $alarm_time" | tee -a $LOG_FILE
-
-#     # Remove milliseconds for comparison
-#     alarm_time=${alarm_time#*" "}
-#     alarm_time=${alarm_time%.*}
-
-#     # Detailed logging for comparison
-#     echo "Expected wakeup time: $wakeup_time" | tee -a $LOG_FILE
-#     echo "Retrieved alarm time: $alarm_time" | tee -a $LOG_FILE
-
-#     if [[ $alarm_time == "$wakeup_time" ]]; then
-#         # Sleep for n seconds then poweroff
-#         echo "Sleeping for $SHUTDOWN_AFTER seconds before shutdown" | tee -a $LOG_FILE
-#         sleep $SHUTDOWN_AFTER
-#         sudo shutdown now
-#     else
-#         echo "Set RTC wakeup time error: $alarm_time did not match $wakeup_time" | tee -a $LOG_FILE
-#         exit 1
-#     fi
-# else
-#     echo "Get RTC time error" | tee -a $LOG_FILE
-#     exit 1
-# fi

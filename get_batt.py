@@ -1,3 +1,5 @@
+#!/home/pi/venvs/opencv-env/bin/python
+
 import socket
 
 def get_battery_status(socket_path="/tmp/pisugar-server.sock"):

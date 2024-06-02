@@ -1,4 +1,4 @@
-#!/home/pi/venvs/opencv-env/bin/python
+#!/home/pi/venvs/opencv-env/bin/python3
 
 import cv2
 import os
@@ -9,13 +9,8 @@ setthreshold = 60
 setblursize = 51
 setsize = 3000
 setavgframes = 20
-compression_quality = 10    # 15 recommended for manageable size buffers
-
-def motion_capture():
-    # Adjust working directory
-    working_directory = os.path.expanduser('~/Documents/REMORA_RPi')
-    os.chdir(working_directory)
-
+compression_quality = 100  
+def motion_capture(duration):
     # Make sure to avoid any errors due to no viewing platform
     os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
@@ -27,23 +22,29 @@ def motion_capture():
     time.sleep(2)  # Allow auto-exposure to settle
 
     # Make the storage directory for captures
-    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/capture_archive/')
+    directory_path = '/home/pi/Documents/REMORA_RPi/capture_archive/'
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     files = os.listdir(directory_path)
-    image_index = len(files)    # find the current capture index
+    image_index = len(files)  # find the current capture index
 
     frames = []
+    start_time = time.time()  # Record the start time
 
     try:
         for _ in range(setavgframes):
             done, frame = cap.read()
             if not done:
                 print("Failed to capture initial frames")
-                return
+                return None
             frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
 
         while True:
+            current_time = time.time()
+            if current_time - start_time > duration:
+                print("Timeout: No motion detected within the specified duration.")
+                return None  # Return None if no motion is detected within the specified time
+
             avg_frame = np.mean(frames, axis=0).astype(np.uint8)
             done, NextFrame = cap.read()
             if not done:
@@ -60,7 +61,7 @@ def motion_capture():
 
             for contour in contours:
                 if cv2.contourArea(contour) >= setsize:
-                    done, image = cap.read() 
+                    done, image = cap.read()
                     if not done:
                         print("Failed to capture image during motion capture sequence")
                         break
@@ -68,7 +69,7 @@ def motion_capture():
                     image_path = f"{directory_path}img_{image_index}.jpg"
                     cv2.imwrite(image_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
                     print(f"Motion detected and image saved as {image_path}")
-                    return image 
+                    return image
 
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -78,4 +79,5 @@ def motion_capture():
         print("Camera released and program ended")
 
 if __name__ == '__main__':
-    _ = motion_capture()
+    duration = 15  # Duration in seconds
+    _ = motion_capture(duration)

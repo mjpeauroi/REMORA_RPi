@@ -1,4 +1,4 @@
-#!/home/pi/venvs/opencv-env/bin/python 
+#!/home/pi/venvs/opencv-env/bin/python
 
 import cv2
 import os
@@ -8,29 +8,31 @@ import serial
 import time
 
 buffer_size = 300
+compression_quality = 10 # 15 recommended for manageable size buffers
 
 def encode_to_base64(binary_data):
     base64_encoded_data = base64.b64encode(binary_data)
     return base64_encoded_data.decode('ascii')
 
 def split(image):
-    # Adjust working directory
-    working_directory = os.path.expanduser('~/Documents/REMORA_RPi')
-    os.chdir(working_directory)
-
+    print(f"image size: {image}")
     # Cleanup old buffers
-    if os.path.exists("buffers/"):
-        shutil.rmtree("buffers/")
+    directory_path = '/home/pi/Documents/REMORA_RPi/buffers/'
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path)
         print("Deleted buffers dir")
     # Create new split_capture directory
-    os.makedirs("buffers/", exist_ok=True)
+    os.makedirs(directory_path, exist_ok=True)
     print("Created buffers dir")
 
     # Encode image to jpeg
-    retval, buffer = cv2.imencode('.jpg', image)
+    retval, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
+    print(f"length of buffer: {len(buffer)}")
+
     if retval:
         # Convert buffer to a bytes object and encode in base64
         base64_data = base64.b64encode(buffer).decode("ascii")
+        print(f"length of base 64: {len(base64_data)}")
         print("Success encoding image")
     else:
         raise ValueError("Failed to encode image")
@@ -41,7 +43,8 @@ def split(image):
     while (buffer_number * buffer_size < file_length):
         start_pos = buffer_number * buffer_size
         current_buffer = base64_data[start_pos:start_pos + buffer_size]
-        
+        print(f"Saving buffer {buffer_number}, start_pos: {start_pos}")
+
         # Write the buffer to its own text file
         path = f"buffers/split_{buffer_number}.txt"
         with open(path, 'w') as buffer_file:
@@ -52,12 +55,8 @@ def split(image):
     print(f"Saved {buffer_number} buffer txt files.")
 
 def send():
-    # Adjust working directory
-    working_directory = os.path.expanduser('~/Documents/REMORA_RPi')
-    os.chdir(working_directory)
-
     # Find the number of buffer files generated
-    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/buffers/')
+    directory_path = '/home/pi/Documents/REMORA_RPi/buffers/'
     if os.path.exists(directory_path):
         # List everything in the directory
         files = os.listdir(directory_path)
@@ -65,7 +64,7 @@ def send():
         print(f"{num_buffers} buffers found")
 
     # Get the index label for this image
-    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/capture_archive/')
+    directory_path = '/home/pi/Documents/REMORA_RPi/capture_archive/'
     if os.path.exists(directory_path):
         # List everything in the directory
         files = os.listdir(directory_path)
@@ -79,7 +78,7 @@ def send():
         # Open the serial port
         if not ser.is_open:
             ser.open()
-        buffer_to_send = f"<START IMG {this_capture_index}> length: {num_buffers}\n"
+        # buffer_to_send = f"<START IMG {this_capture_index}> length: {num_buffers}\n"
         ser.write(buffer_to_send.encode('ascii'))
         print(f'Sent {buffer_to_send}')
         time.sleep(4) # wait to ensure the start tag sends fully
@@ -97,13 +96,28 @@ def send():
         buffer_to_send = f"<END IMG {this_capture_index}>\n"
         ser.write(buffer_to_send.encode('ascii'))
         print(f'Sent {buffer_to_send}')
+    except Exception as e:
+        print("An exception occurred:", e)
+    finally:
+        ser.close()
 
+def send_message(msg):
+    # make the serial device
+    ser = serial.Serial('/dev/ttyS0', baudrate=9600, timeout=1)
+    try:
+        # Open the serial port
+        if not ser.is_open:
+            ser.open()
+        ser.write(msg.encode('ascii'))
+        print(f"Sent: {msg}")
+        
+    except Exception as e:
+        print("An exception occurred:", e)
     finally:
         ser.close()
 
 
-
 if __name__ == "__main__":
-    img = cv2.imread("/home/pi/Documents/REMORA_RPi/capture_archive/img_1.jpg")
+    img = cv2.imread("/home/pi/Documents/REMORA_RPi/capture_archive/img_3.jpg")
     split(img)
     send()
