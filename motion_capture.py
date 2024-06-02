@@ -9,21 +9,29 @@ setthreshold = 60
 setblursize = 51
 setsize = 3000
 setavgframes = 20
-compression_quality = 90
+compression_quality = 10    # 15 recommended for manageable size buffers
 
 def motion_capture():
+    # Adjust working directory
+    working_directory = os.path.expanduser('~/Documents/REMORA_RPi')
+    os.chdir(working_directory)
+
+    # Make sure to avoid any errors due to no viewing platform
     os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+
+    # Create camera object and get dimensions
     cap = cv2.VideoCapture(0)
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
 
     time.sleep(2)  # Allow auto-exposure to settle
 
-    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/motiontest/')
+    # Make the storage directory for captures
+    directory_path = os.path.expanduser('~/Documents/REMORA_RPi/capture_archive/')
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     files = os.listdir(directory_path)
-    image_index = len(files)
+    image_index = len(files)    # find the current capture index
 
     frames = []
 
@@ -52,18 +60,15 @@ def motion_capture():
 
             for contour in contours:
                 if cv2.contourArea(contour) >= setsize:
-                    for wait in range(3):
-                        time.sleep(1)
-                        capture_time = time.time()  # Capture the current time
-                        done, image = cap.read()
-                        if not done:
-                            print("Failed to capture image during motion capture sequence")
-                            break
-                        image_path = f"{directory_path}img_{image_index}_{wait}.jpg"
-                        cv2.imwrite(image_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
-                        print(f"Motion detected and image saved as {image_path}, time elapsed: {capture_time:.2f} seconds")
-                        image_index += 1
-                    return  # Exit after capturing three images on motion
+                    done, image = cap.read() 
+                    if not done:
+                        print("Failed to capture image during motion capture sequence")
+                        break
+
+                    image_path = f"{directory_path}img_{image_index}.jpg"
+                    cv2.imwrite(image_path, image, [int(cv2.IMWRITE_JPEG_QUALITY), compression_quality])
+                    print(f"Motion detected and image saved as {image_path}")
+                    return image 
 
     except KeyboardInterrupt:
         print("Interrupted by user")
@@ -73,4 +78,4 @@ def motion_capture():
         print("Camera released and program ended")
 
 if __name__ == '__main__':
-    motion_capture()
+    _ = motion_capture()
