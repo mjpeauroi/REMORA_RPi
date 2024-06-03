@@ -15,7 +15,6 @@ def encode_to_base64(binary_data):
     return base64_encoded_data.decode('ascii')
 
 def split(image):
-    print(f"image size: {image}")
     # Cleanup old buffers
     directory_path = '/home/pi/Documents/REMORA_RPi/buffers/'
     if os.path.exists(directory_path):
@@ -43,7 +42,7 @@ def split(image):
     while (buffer_number * buffer_size < file_length):
         start_pos = buffer_number * buffer_size
         current_buffer = base64_data[start_pos:start_pos + buffer_size]
-        print(f"Saving buffer {buffer_number}, start_pos: {start_pos}")
+       # print(f"Saving buffer {buffer_number}, start_pos: {start_pos}")
 
         # Write the buffer to its own text file
         path = f"buffers/split_{buffer_number}.txt"
@@ -78,7 +77,7 @@ def send():
         # Open the serial port
         if not ser.is_open:
             ser.open()
-        # buffer_to_send = f"<START IMG {this_capture_index}> length: {num_buffers}\n"
+        buffer_to_send = f"<START IMG {this_capture_index}> length: {num_buffers}\n"
         ser.write(buffer_to_send.encode('ascii'))
         print(f'Sent {buffer_to_send}')
         time.sleep(4) # wait to ensure the start tag sends fully

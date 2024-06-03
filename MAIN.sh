@@ -2,6 +2,7 @@
 
 set -e
 
+
 # Activate the virtual environment for python scripts
 source /home/pi/venvs/opencv-env/bin/activate
 
@@ -9,10 +10,15 @@ source /home/pi/venvs/opencv-env/bin/activate
 # ie. '3600' sets wakeup at the top of every hour
 #     '600' sets wakeup at ~:00, ~:10, ~:20 etc
 #     '300' sets wakeup at ~:00, ~:05, ~:10, ~:15 etc
-WAKEUP_INTERVAL=240
+WAKEUP_INTERVAL=180
 
 # Log file for debug information
 LOG_FILE=/home/pi/powercontrol.log
+
+# Run Main
+echo "Main program beginning now..." | tee -a $LOG_FILE 
+python3 /home/pi/Documents/REMORA_RPi/main.py
+echo "Main program ended." | tee -a $LOG_FILE 
 
 # Request rtc_time from sugar
 response=$(echo "get rtc_time" | nc -q 0 127.0.0.1 8423 2>&1)
@@ -21,7 +27,7 @@ if [[ $response =~ "rtc_time: " ]]; then
     echo "rtc_rtc2pi" | nc -q 0 127.0.0.1 8423 # sync sugar's rtc time to pi's clock
 
     rtc_time=${response#*"rtc_time: "} # trim 'rtc_time: ' off the rtc time string
-    echo "Sugar rtc time: $rtc_time" | tee -a $LOG_FILE
+    echo "SUGAR RTC TIME AT RUN: $rtc_time" | tee -a $LOG_FILE
 
     # Keep the full datetime format including timezone
     current_time="$rtc_time"
@@ -39,14 +45,16 @@ if [[ $response =~ "rtc_time: " ]]; then
     echo "Next calculated wakeup: $wakeup_time" | tee -a $LOG_FILE
 
     # Send the alarm set command to sugar
-    echo "rtc_alarm_set ${wakeup_time} 0" | nc -q 0 127.0.0.1 8423
+    echo "rtc_alarm_set ${wakeup_time} 127" | nc -q 0 127.0.0.1 8423
 
     # Double check the set time
     alarm_time=$(echo "get rtc_alarm_time" | nc -q 0 127.0.0.1 8423)
     echo "Set wakeup time is $alarm_time - (note ymd is ignored)" | tee -a $LOG_FILE # ymd is ignored and alarm is set for the current day
 
-    # sudo /home/pi/venvs/opencv-env/bin/python3 main.py
-    # sudo shutdown now
+    # Initiate shutdown
+    sleep 1
+    sudo shutdown now
+
 
 else
     echo "Failed to retrieve valid rtc_time from response: $response" | tee -a $LOG_FILE

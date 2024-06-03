@@ -14,6 +14,8 @@ working_directory = '/home/pi/Documents/REMORA_RPi'
 os.chdir(working_directory)
 
 if __name__ == "__main__":
+    tstart = time.time()
+
     # Get the current battery level and send it to the spotter
     batt_level = get_battery_status()
     send_message(batt_level)
@@ -21,10 +23,14 @@ if __name__ == "__main__":
 
     print("Starting motion detection...")
     capture = motion_capture(8)
-    if capture.any():
+    if capture is not None:
+        print("Image captured. Beginning split and send.")
         split(capture)
         time.sleep(1)
         send()
+    else:
+        print("No image captured.")
 
-    print("Main file ending.")
+    print("Main program ending.")
+    print(f"Main program duration: {time.time() - tstart}")
     time.sleep(1)
