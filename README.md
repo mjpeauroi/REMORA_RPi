@@ -15,13 +15,18 @@ With contents something like the following:
 
 [Unit]
 Description=Sleep/Wake Cycle
+
 After=network.target
 
 [Service]
 ExecStart=/home/pi/Documents/REMORA_RPi/MAIN.sh  # replace with the location of your master bash file
+
 Restart=on-failure
+
 User=root
+
 StandardOutput=append:/home/pi/Documents/REMORA_RPi/LOG.log  # replace with desired log file location
+
 StandardError=inherit
 
 [Install]
@@ -43,8 +48,12 @@ Here's some nice tester commands I found useful for testing via CLI:
 (Reference [pisugar-power-manager github](https://github.com/PiSugar/pisugar-power-manager-rs))
 
 wakeup_time=$(date -d "+2 minutes" --iso-8601=seconds)
+
 echo "Wakeup time is set to: $wakeup_time"
+
 echo "rtc_alarm_set ${wakeup_time} 127" | nc -q 0 127.0.0.1 8423
+
 alarm_time=$(echo "get rtc_alarm_time" | nc -q 0 127.0.0.1 8423)
+
 echo "Set wakeup time is $alarm_time"
 
