@@ -15,17 +15,17 @@ With contents something like the following:
 
 [Unit]\
 Description=Sleep/Wake Cycle\
-After=network.target\
+After=network.target
 
 [Service]\
 ExecStart=/home/pi/Documents/REMORA_RPi/MAIN.sh  # replace with the location of your master bash file\
 Restart=on-failure\
 User=root\
 StandardOutput=append:/home/pi/Documents/REMORA_RPi/LOG.log  # replace with desired log file location\
-StandardError=inherit\
+StandardError=inherit
 
 [Install]\
-WantedBy=multi-user.target\
+WantedBy=multi-user.target
 
 Other scripts used for testing/work in progress are found in test_script_archive
 
@@ -33,14 +33,14 @@ Other scripts used for testing/work in progress are found in test_script_archive
 To enable, start, and check the run status of the bash script automation service paste this:\
 sudo systemctl enable powercontrol.service\
 sudo systemctl start powercontrol.service\
-sudo systemctl status powercontrol.service\
+sudo systemctl status powercontrol.service
 
 To disable it paste this (keep this handy in case shutdown is scheduled soon after wakeup):\
 sudo systemctl stop powercontrol.service\
-sudo systemctl disable powercontrol.service\
+sudo systemctl disable powercontrol.service
 
 Here's some nice tester commands I found useful for testing via CLI:\
-(Reference [pisugar-power-manager github](https://github.com/PiSugar/pisugar-power-manager-rs))\
+(Reference [pisugar-power-manager github](https://github.com/PiSugar/pisugar-power-manager-rs))
 
 wakeup_time=$(date -d "+2 minutes" --iso-8601=seconds)\
 echo "Wakeup time is set to: $wakeup_time"\
