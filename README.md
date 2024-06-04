@@ -46,5 +46,5 @@ wakeup_time=$(date -d "+2 minutes" --iso-8601=seconds)\
 echo "Wakeup time is set to: $wakeup_time"\
 echo "rtc_alarm_set ${wakeup_time} 127" | nc -q 0 127.0.0.1 8423\
 alarm_time=$(echo "get rtc_alarm_time" | nc -q 0 127.0.0.1 8423)\
-echo "Set wakeup time is $alarm_time"\
+echo "Set wakeup time is $alarm_time"
 
